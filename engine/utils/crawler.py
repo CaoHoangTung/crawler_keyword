@@ -7,8 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from cfg.config import config, CHROME_PATH
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import requests
-from jsondb.db import Database
-db = Database("./engine/data/log.json")
+import json
 
 wd_options = Options()
 wd_options.add_argument("--headless")
@@ -198,8 +197,14 @@ def crawl(source="", keyword="", offset=1, batch_size=1, exit_when_url_exist=Tru
                     source=source, post_link=link, keyword=keyword)
                 # print(post_data)
                 
-                db.data(key=post_data["url"],value=post_data)
+                
+                with open('./engine/data/log.json','w+') as json_file:
+                    data = json.load(json_file)
+                    data = [*data,post_data]
+                    json.dump(data,json_file)
 
+                # db.data(key=post_data["url"],value=post_data)
+                # db.insert(post_data)
                 # es.add_document(
                 #     es_index=config[source]["elastic_index"], data=post_data)
                 new_record += 1
