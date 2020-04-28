@@ -3,7 +3,9 @@ import time
 
 begin = time.time()
 
-crawler.crawl(source="https://ndh.vn",keyword="cổ phiếu",from_page=499,exit_when_url_exist=False)
+print("STARTING")
+
+crawler.crawl(source="https://vnexpress.net",keyword="", offset=1, batch_size=5,exit_when_url_exist=False, use_elastic_search=False)
 
 end = time.time()
 
