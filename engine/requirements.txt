@@ -1,4 +1,4 @@
 selenium
 pyvi
 elasticsearch==7.6.0
-tinydb==3.15.2
+gjsondb
