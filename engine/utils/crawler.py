@@ -202,7 +202,7 @@ def crawl(source="", keyword="", offset=1, batch_size=1, exit_when_url_exist=Tru
                     data = json.load(json_file)
                     data = [*data,post_data]
                 with open('./engine/data/log.json','w',encoding='utf-8') as json_file:
-                    json.dump(data,json_file)
+                    json.dump(data,json_file,ensure_ascii=False)
 
                 # db.data(key=post_data["url"],value=post_data)
                 # db.insert(post_data)
