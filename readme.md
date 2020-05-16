@@ -51,10 +51,25 @@ Customize the crawler in ```main.py```
 crawler.crawl(source="https://ndh.vn",keyword="cổ phiếu",from_page=499,exit_when_url_exist=False)
 ```
 ```source```: ```string``` - The source of the posts. Configuration in ```./cfg/config.py```
+
 ```keyword```: ```string``` - The keyword used for search
+
 ```from_page```: ```int``` - The start page which posts will be fetched from 
+
 ```exit_when_url_exist```: ```bool``` - If set to ```False```, the crawler will exit if it see a url which has been indexed in elastic search
 ```date_range```: ```tuple``` - (from_date, to_date), the date range which we want to fetch the posts. The format of from_date and to_date will be "d/m/y", eg "7/5/2020"
+
+## Working with elastic search
+
+Get indexed documents
+
+```
+GET http://localhost:9200/posts/_search/?pretty=true&from=[FROM_INDEX]&size=[SIZE_OF_RETURN_OBJECTS]
+```
+
+```FROM_INDEX```: number which indicates the starting point of the return results
+
+```SIZE_OF_RETURN_OBJECTS```: the size of the returned ```hits``` array 
 
 ## Author
 proxyht
