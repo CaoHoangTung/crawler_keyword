@@ -17,7 +17,7 @@ wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options
 
 
 # get all new links which are not existing on elastic search
-def get_new_links(source="",keyword="",from_page=1,exit_when_url_exist=True):
+def get_new_links(source="",keyword="",from_page=1,to_page=10000,exit_when_url_exist=True,date_range=None):
     page = from_page
 
     document_exist_in_elastic = False
@@ -26,7 +26,22 @@ def get_new_links(source="",keyword="",from_page=1,exit_when_url_exist=True):
     xpath_configuration = config[source]["xpath"]
     es_index = config[source]["elastic_index"]
 
+    # if need to find posts in a specific range, find the actual from_page and to_page
+    if date_range:
+        # find actual from_page
+        page_url = pagination_url.format(keyword,from_page)
+
+        wd.get(page_url)
+        post_dates = wd.find_elements_by_xpath(xpath_configuration["post_dates"])
+        
+        # find actual to_page
+        pass
+
     while True:
+        if page > to_page:
+            print("Page reach limit")
+            break
+
         if document_exist_in_elastic and exit_when_url_exist:
             print("Link existed")
             break
@@ -105,12 +120,17 @@ def get_post_content_from_link(source="",post_link="",keyword=""):
     return data
 
 
-def crawl(source="",keyword="",from_page=1,exit_when_url_exist=True):
+def crawl(source="",keyword="",from_page=1,to_page=10000,exit_when_url_exist=True,date_range=(None,None)):
     new_record = 0
     msg = ""
 
     if es.connection_is_available():
-        new_links = get_new_links(source,keyword,from_page,exit_when_url_exist)
+        new_links = get_new_links(
+            source=source,
+            keyword=keyword,
+            from_page=from_page,
+            to_page=to_page,
+            exit_when_url_exist=exit_when_url_exist)
         print(new_links)
         for link in new_links:
             print("Getting content for "+link)

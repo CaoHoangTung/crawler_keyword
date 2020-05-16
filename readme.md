@@ -54,6 +54,7 @@ crawler.crawl(source="https://ndh.vn",keyword="cổ phiếu",from_page=499,exit_
 ```keyword```: ```string``` - The keyword used for search
 ```from_page```: ```int``` - The start page which posts will be fetched from 
 ```exit_when_url_exist```: ```bool``` - If set to ```False```, the crawler will exit if it see a url which has been indexed in elastic search
+```date_range```: ```tuple``` - (from_date, to_date), the date range which we want to fetch the posts. The format of from_date and to_date will be "d/m/y", eg "7/5/2020"
 
 ## Author
 proxyht

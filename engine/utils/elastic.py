@@ -16,13 +16,12 @@ def document_exists(es_index="posts", url=""):
         found = res['found']
         return found
     except Exception as e:
-        print(e)
         return False
     
 
 def add_document(es_index="posts",data={}):
     print("INDEXING")
-    print(data)
+    # print(data)
     document_id = hashlib.md5(data["url"].encode('utf-8')).hexdigest()
     try:
         res = es.index(index=es_index, id=document_id, body=data)

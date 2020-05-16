@@ -1,0 +1,244 @@
+import re
+import platform
+import utils.elastic as es
+import time
+import utils.data as data_handler
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from cfg.config import config, CHROME_PATH
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+
+wd_options = Options()
+# wd_options.add_argument("--headless")
+wd_options.add_argument('--no-sandbox')
+wd_options.add_argument('--disable-dev-shm-usage')
+
+# wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
+wd = webdriver.Chrome("./engine/chromedriver.exe", options=wd_options)
+
+def get_post_content_from_link(source="", post_link="", keyword=""):
+    data = {
+        "keyword": keyword,
+        "url": "",
+        "title": "",
+        "content": "",
+        "date": "",
+        "author": "",
+        "tokenize_content": "",
+    }
+    data["url"] = post_link
+    wd.get(post_link)
+    try:
+        title = wd.find_element_by_xpath(
+            config[source]["xpath"]["title"]).get_attribute("innerText")
+        data["title"] = title
+    except Exception as e:
+        print("Can't fetch title "+str(e))
+        pass
+
+    try:
+        content = wd.find_element_by_xpath(
+            config[source]["xpath"]["content"]).get_attribute("innerText")
+        data["content"] = data_handler.prepare_content(content)
+    except Exception as e:
+        print("Can't fetch content "+str(e))
+        pass
+
+    try:
+        date = wd.find_element_by_xpath(
+            config[source]["xpath"]["date"]).get_attribute("innerText")
+        data["date"] = date
+    except Exception as e:
+        print("Can't fetch date "+str(e))
+        pass
+
+    try:
+        author = wd.find_element_by_xpath(
+            config[source]["xpath"]["author"]).get_attribute("innerText")
+        data["author"] = author
+    except Exception as e:
+        print("Can't fetch author "+str(e))
+        pass
+
+    try:
+        tokenize_content = data_handler.tokenize_content(data["content"])
+        data["tokenize_content"] = tokenize_content
+    except Exception as e:
+        print("Can't tokenize content "+str(e))
+        pass
+
+    return data
+
+
+
+"""
+Find the page range given a specific date
+date_range is a 2-string-elements tuple, format (d/m/y, d/m/y)
+"""
+
+
+def find_page_range(source, keyword, from_page, to_page, date_range):
+    if date_range == None:
+        return (from_page, to_page)
+
+    page_url = config[source]["page_url"].replace("{$keyword$}", keyword)
+    xpath_configuration = config[source]["xpath"]
+    date_extract_regex = xpath_configuration["date_extract_regex"]
+    date_element_split_by = xpath_configuration["date_element_split_by"]
+    date_from_tuple = date_range[0].split(date_element_split_by)
+    date_from_tuple.reverse()
+    date_from_tuple = [int(elem) for elem in date_from_tuple]
+    date_to_tuple = date_range[1].split(date_element_split_by)
+    date_to_tuple.reverse()
+    date_to_tuple = [int(elem) for elem in date_to_tuple]
+
+    page_limit_left = from_page
+    page_limit_right = to_page
+
+    print("Finding limit left")
+    """
+    Find the to_page - the last page which contains posts in date_range
+    """
+    lpage = from_page
+    rpage = to_page
+    while True:
+        if lpage >= rpage:
+            if lpage == rpage:
+                page_limit_right = lpage
+            else:
+                page_limit_right = -1
+            break
+        mid_page = int((lpage + rpage) / 2 + 1)
+        url = page_url.replace("{$page$}", str(mid_page))
+        wd.get(url)
+        link_elements = wd.find_elements_by_xpath(
+            xpath_configuration["post_links"])
+        links = [link_element.get_attribute("href")
+                 for link_element in link_elements]
+
+        if len(links) == 0:
+            rpage = mid_page-1
+            continue
+
+        post_data = get_post_content_from_link(
+            source=source, post_link=links[0], keyword=keyword)
+        # print(post_data["date"])
+        # print(re.findall(date_extract_regex, post_data["date"]))
+        date_cur = re.findall(date_extract_regex, post_data["date"])
+        if len(date_cur) == 0:
+            rpage = mid_page - 1
+        else:
+            date_cur_tuple = date_cur[0].split(date_element_split_by)
+            date_cur_tuple.reverse()
+            date_cur_tuple = [int(elem) for elem in date_cur_tuple]
+            if date_cur_tuple < date_from_tuple: # if current date is older than the range
+                rpage = mid_page-1
+            else:
+                lpage = mid_page
+    """"""
+
+    print("Finding limit right")
+    """
+    Find the from_page - the first page which contains posts in date_range
+    """
+    lpage = from_page
+    rpage = to_page
+    while True:
+        if lpage >= rpage:
+            if lpage == rpage:
+                page_limit_left = lpage
+            else:
+                page_limit_left = -1
+            break
+        mid_page = int((lpage + rpage) / 2)
+        url = page_url.replace("{$page$}", str(mid_page))
+        wd.get(url)
+        link_elements = wd.find_elements_by_xpath(
+            xpath_configuration["post_links"])
+        links = [link_element.get_attribute("href")
+                 for link_element in link_elements]
+
+        if len(links) == 0:
+            rpage = mid_page-1
+            continue
+
+        post_data = get_post_content_from_link(
+            source=source, post_link=links[0], keyword=keyword)
+        # print(post_data["date"])
+        # print(re.findall(date_extract_regex, post_data["date"]))
+        date_cur = re.findall(date_extract_regex, post_data["date"])
+        if len(date_cur) == 0:
+            rpage = mid_page - 1
+        else:
+            date_cur_tuple = date_cur[-1].split(date_element_split_by)
+            date_cur_tuple.reverse()
+            date_cur_tuple = [int(elem) for elem in date_cur_tuple]
+            if date_cur_tuple > date_to_tuple: # if current date is older than the range
+                lpage = mid_page+1
+            else:
+                rpage = mid_page
+
+    print("FROM PAGE",page_limit_left,"TO PAGE:",page_limit_right)
+    return (page_limit_left, page_limit_right)
+
+
+def crawl(source="", keyword="", from_page=1, to_page=10000, exit_when_url_exist=True, date_range=None):
+    print("CRAWLING FROM SOURCE {:s}", source)
+    new_record = 0
+    msg = ""
+
+    xpath_configuration = config[source]["xpath"]
+    page_url = config[source]["page_url"].replace("{$keyword$}", keyword)
+    es_index = config[source]["elastic_index"]
+
+    """
+    Find the starting page and ending page if date_range is provided
+    """
+    (start_page, end_page) = find_page_range(source=source, keyword=keyword,
+                                             from_page=from_page, to_page=to_page, date_range=date_range)
+
+    from_page = max(from_page, start_page)
+    to_page = min(to_page, end_page)
+    """
+    End of finding starting and ending page
+    """
+
+    if es.connection_is_available():
+        print("Scraping page", from_page, to_page)
+        exit_because_url_exist = False
+
+        for page in range(from_page, to_page+1):
+            if exit_because_url_exist:
+                break
+
+            url = page_url.replace("{$page$}", str(page))
+            print("GETTING ", url)
+            wd.get(url)
+            link_elements = wd.find_elements_by_xpath(
+                xpath_configuration["post_links"])
+            links = [link_element.get_attribute(
+                "href") for link_element in link_elements]
+
+            for link in links:
+                print("Getting post data from ", link)
+                post_data = get_post_content_from_link(
+                    source=source, post_link=link, keyword=keyword)
+                if es.document_exists(es_index=es_index, url=link):
+                    print("DOCUMENT EXISTED IN ELASTIC.", link)
+                    if (exit_when_url_exist):
+                        exit_because_url_exist = True
+                        break
+
+                es.add_document(
+                    es_index=config[source]["elastic_index"], data=post_data)
+                new_record += 1
+    else:
+        msg = "Cannot connect to elastic search"
+
+    wd.close()
+
+    return {
+        "new_record": new_record,
+        "msg": msg
+    }

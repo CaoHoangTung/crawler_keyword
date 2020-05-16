@@ -1,9 +1,9 @@
-import utils.crawler as crawler
+import utils.crawler_v2 as crawler
 import time
 
 begin = time.time()
 
-crawler.crawl(source="https://ndh.vn",keyword="cổ phiếu",from_page=499,exit_when_url_exist=False)
+print(crawler.crawl(source="https://ndh.vn",from_page=500,keyword="cổ phiếu",exit_when_url_exist=False))
 
 end = time.time()
 
