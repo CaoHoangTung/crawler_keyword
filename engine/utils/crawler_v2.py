@@ -96,13 +96,14 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
     page_limit_left = from_page
     page_limit_right = to_page
 
-    print("Finding limit left")
+    print("Finding limit right")
     """
     Find the to_page - the last page which contains posts in date_range
     """
     lpage = from_page
     rpage = to_page
     while True:
+        print(lpage,rpage)
         if lpage >= rpage:
             if lpage == rpage:
                 page_limit_right = lpage
@@ -138,13 +139,14 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
                 lpage = mid_page
     """"""
 
-    print("Finding limit right")
+    print("Finding limit left")
     """
     Find the from_page - the first page which contains posts in date_range
     """
     lpage = from_page
     rpage = page_limit_right
     while True:
+        print(lpage,rpage)
         if lpage >= rpage:
             if lpage == rpage:
                 page_limit_left = lpage
