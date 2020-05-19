@@ -10,12 +10,12 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 
 wd_options = Options()
-# wd_options.add_argument("--headless")
+wd_options.add_argument("--headless")
 wd_options.add_argument('--no-sandbox')
 wd_options.add_argument('--disable-dev-shm-usage')
 
-# wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
-wd = webdriver.Chrome("./engine/chromedriver.exe", options=wd_options)
+wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
+# wd = webdriver.Chrome("./engine/chromedriver.exe", options=wd_options)
 
 def get_post_content_from_link(source="", post_link="", keyword=""):
     data = {
@@ -143,7 +143,7 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
     Find the from_page - the first page which contains posts in date_range
     """
     lpage = from_page
-    rpage = to_page
+    rpage = page_limit_right
     while True:
         if lpage >= rpage:
             if lpage == rpage:
