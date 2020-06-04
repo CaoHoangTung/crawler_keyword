@@ -33,6 +33,8 @@ Install python packages
 pip install -r requirements.txt
 ```
 
+Configure mysql credential in `./engine/cfg/config.py`
+
 
 ## Running the crawler
 
@@ -43,6 +45,12 @@ Run the crawler by executing
 python ./engine/main.py
 ```
 
+
+## Running the crawler with crontab
+
+```
+0 0 * * * {YOUR_BASE_PATH}/crawler_keyword/engine/fetch.sh
+```
 
 ## Customize the crawler
 

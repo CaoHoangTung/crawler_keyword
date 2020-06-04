@@ -1,3 +1,4 @@
+# DEPRACATED
 import platform
 import utils.elastic as es
 import time

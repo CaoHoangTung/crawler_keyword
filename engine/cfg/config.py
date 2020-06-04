@@ -1,8 +1,20 @@
 CHROME_PATH = "http://127.0.0.1:4444/wd/hub"
+LOGGING_PATH = "./logging"
+
+ELASTIC_CONFIG = {
+    "host": "localhost",
+    "port": "9200"
+}
+
+MYSQL_CONFIG = {
+    "host": "localhost",
+    "user": "root",
+    "passwd": "",
+    "database": "crawler"
+}
 
 config = {
     "https://ndh.vn": {
-        "elastic_index": "posts",
         "pagination_url": "https://ndh.vn/search.html?q={:s}&page={:d}.html",
         "page_url": "https://ndh.vn/search.html?q={$keyword$}&page={$page$}.html",
         "xpath": {

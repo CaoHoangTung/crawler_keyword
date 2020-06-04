@@ -14,8 +14,8 @@ wd_options.add_argument("--headless")
 wd_options.add_argument('--no-sandbox')
 wd_options.add_argument('--disable-dev-shm-usage')
 
-wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
 # wd = webdriver.Chrome("./engine/chromedriver.exe", options=wd_options)
+wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
 
 def get_post_content_from_link(source="", post_link="", keyword=""):
     data = {
@@ -29,44 +29,40 @@ def get_post_content_from_link(source="", post_link="", keyword=""):
     }
     data["url"] = post_link
     wd.get(post_link)
+
     try:
         title = wd.find_element_by_xpath(
             config[source]["xpath"]["title"]).get_attribute("innerText")
         data["title"] = title
     except Exception as e:
-        print("Can't fetch title "+str(e))
-        pass
+        print("Warning: Can't fetch title "+str(e))
 
     try:
         content = wd.find_element_by_xpath(
             config[source]["xpath"]["content"]).get_attribute("innerText")
         data["content"] = data_handler.prepare_content(content)
     except Exception as e:
-        print("Can't fetch content "+str(e))
-        pass
+        print("Warning: Can't fetch content "+str(e))
 
     try:
         date = wd.find_element_by_xpath(
             config[source]["xpath"]["date"]).get_attribute("innerText")
         data["date"] = date
     except Exception as e:
-        print("Can't fetch date "+str(e))
-        pass
+        print("Warning: Can't fetch date "+str(e))
 
     try:
         author = wd.find_element_by_xpath(
             config[source]["xpath"]["author"]).get_attribute("innerText")
         data["author"] = author
     except Exception as e:
-        print("Can't fetch author "+str(e))
-        pass
+        print("Warning: Can't fetch author "+str(e))
 
     try:
         tokenize_content = data_handler.tokenize_content(data["content"])
         data["tokenize_content"] = tokenize_content
     except Exception as e:
-        print("Can't tokenize content "+str(e))
-        pass
+        print("Warning: Can't tokenize content "+str(e))
 
     return data
 
@@ -96,14 +92,12 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
     page_limit_left = from_page
     page_limit_right = to_page
 
-    print("Finding limit right")
     """
     Find the to_page - the last page which contains posts in date_range
     """
     lpage = from_page
     rpage = to_page
     while True:
-        print(lpage,rpage)
         if lpage >= rpage:
             if lpage == rpage:
                 page_limit_right = lpage
@@ -124,8 +118,7 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
 
         post_data = get_post_content_from_link(
             source=source, post_link=links[0], keyword=keyword)
-        # print(post_data["date"])
-        # print(re.findall(date_extract_regex, post_data["date"]))
+
         date_cur = re.findall(date_extract_regex, post_data["date"])
         if len(date_cur) == 0:
             rpage = mid_page - 1
@@ -139,14 +132,12 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
                 lpage = mid_page
     """"""
 
-    print("Finding limit left")
     """
     Find the from_page - the first page which contains posts in date_range
     """
     lpage = from_page
     rpage = page_limit_right
     while True:
-        print(lpage,rpage)
         if lpage >= rpage:
             if lpage == rpage:
                 page_limit_left = lpage
@@ -167,8 +158,7 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
 
         post_data = get_post_content_from_link(
             source=source, post_link=links[0], keyword=keyword)
-        # print(post_data["date"])
-        # print(re.findall(date_extract_regex, post_data["date"]))
+
         date_cur = re.findall(date_extract_regex, post_data["date"])
         if len(date_cur) == 0:
             rpage = mid_page - 1
@@ -185,14 +175,16 @@ def find_page_range(source, keyword, from_page, to_page, date_range):
     return (page_limit_left, page_limit_right)
 
 
-def crawl(source="", keyword="", from_page=1, to_page=10000, exit_when_url_exist=True, date_range=None):
-    print("CRAWLING FROM SOURCE {:s}", source)
+def crawl(source="",es_index="posts", keyword="", from_page=1, to_page=10000, exit_when_url_exist=True, date_range=None):
+    wd = webdriver.Remote(CHROME_PATH, DesiredCapabilities.CHROME,options=wd_options)
+    
+    
+    print("CRAWLING FROM SOURCE {:s}".format(source))
     new_record = 0
     msg = ""
 
     xpath_configuration = config[source]["xpath"]
     page_url = config[source]["page_url"].replace("{$keyword$}", keyword)
-    es_index = config[source]["elastic_index"]
 
     """
     Find the starting page and ending page if date_range is provided
@@ -231,10 +223,10 @@ def crawl(source="", keyword="", from_page=1, to_page=10000, exit_when_url_exist
                     if (exit_when_url_exist):
                         exit_because_url_exist = True
                         break
-
-                es.add_document(
-                    es_index=config[source]["elastic_index"], data=post_data)
-                new_record += 1
+                else:
+                    es.add_document(
+                        es_index=es_index, data=post_data)
+                    new_record += 1
     else:
         msg = "Cannot connect to elastic search"
 
